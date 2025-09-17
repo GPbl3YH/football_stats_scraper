@@ -8,3 +8,4 @@ common/__pycache__/parser.cpython-311.pyc
 common/__pycache__/parser.cpython-313.pyc
 common/__pycache__/utils.cpython-311.pyc
 database.db
+copy_db.py
