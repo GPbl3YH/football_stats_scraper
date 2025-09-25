@@ -10,3 +10,4 @@ common/__pycache__/utils.cpython-311.pyc
 database.db
 copy_db.py
 aaa.py
+app.log
