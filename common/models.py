@@ -5,15 +5,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
 import time
 
-'''
-TODO:   rewrite get_match_stats() method
-        keep in mind that url does not change during switching between the halves
-'''
+
 class Match:
     
-    def __init__(self, url, options):
+    def __init__(self, url, options, driver=None):
         self.URL = url
-        self.DRIVER = get_driver()
+        if driver is None: self.DRIVER = get_driver()
+        else: self.DRIVER = driver
+
+
         self.DRIVER.get(self.URL)
         self.OPTIONS = options
         self.STATS = {'full_time' : {},
@@ -23,7 +23,8 @@ class Match:
         self.__set_team_names()
         self.__set_match_details()
         self.__write_stats()
-        self.DRIVER.quit()
+
+        if driver is None: self.DRIVER.quit()
 
     def __str__(self):
         return f"{self.HOME} against {self.AWAY}, leaugue: {self.LEAGUE}, stats: {self.STATS}"
@@ -46,11 +47,10 @@ class Match:
         self.STATS['first_half']['Goals'] = goals[0]
         self.STATS['second_half']['Goals'] = tuple([goals[1][0]-goals[0][0], goals[1][1]-goals[0][1]])
         self.STATS['full_time']['Goals'] = goals[1]
-        self.DRIVER.quit()
 
     def __set_team_names(self):
 
-        while True:
+        for _ in range(3):
             try:
                 elements = self.DRIVER.find_elements(By.CSS_SELECTOR, "[class*='textStyle_display.medium c_neutrals.nLv1 max-w_[100px] md:max-w_8xl lg:max-w_[156px] trunc_true d_block ta_start']")
             
@@ -66,7 +66,7 @@ class Match:
 
     def get_goals_in_halves(self):
 
-        while True:
+        for _ in range(3):
             try:
 
                 halves = self.DRIVER.find_elements(By.CSS_SELECTOR, "[class^='d_flex py_md px_lg gap_lg w_100%']")
@@ -123,7 +123,7 @@ class Match:
 
     def __set_match_details(self):
 
-        while True:
+        for _ in range(3):
             try:
                 elements = self.DRIVER.find_elements(By.CSS_SELECTOR, "[class*='textStyle_display.micro c_neutrals.nLv3']") #returns date of match, start time, league name and field's name
                 elements = [x.get_attribute("textContent").strip() for x in elements]

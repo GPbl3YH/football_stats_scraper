@@ -33,7 +33,6 @@ def write_stats_to_database(match, connection):
 def get_season_matches(url):
     driver = get_driver()
     driver.get(url)
-    driver.save_screenshot("screenshot1.png")
     
     # accept_cookies(driver)
     

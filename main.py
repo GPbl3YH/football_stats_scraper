@@ -2,6 +2,7 @@ from common import Match
 from common import write_stats_to_database
 from common import create_all_tables
 from common import get_season_matches, get_round_matches
+from common import get_driver
 import logging
 import sqlite3
 
@@ -16,15 +17,16 @@ options = ['Expected Goals (xG)', 'Shots on target', 'Ball possession', 'Total s
 conn = sqlite3.connect("database.db")  
 create_all_tables(conn)
 
-bundesliga, number_of_matches = get_season_matches("https://www.sofascore.com/tournament/football/germany/bundesliga/35#id:63516")
+laliga, number_of_matches = get_season_matches("https://www.sofascore.com/tournament/football/spain/laliga/8#id:61643")
 print(number_of_matches)
 
-
-for i, x in zip(range(32, number_of_matches+1), bundesliga[31::]):
+driver = get_driver()
+for i, x in zip(range(1, number_of_matches+1), laliga):
     try:
-        m = Match(x, options)
+        m = Match(x, options, driver)
         write_stats_to_database(m, conn)
         print(i, x)
+        
     except Exception:
         logging.exception(f"Fail at {i}: {x}")
 
