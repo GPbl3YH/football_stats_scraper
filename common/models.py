@@ -1,4 +1,4 @@
-from .utils import get_driver
+from .utils import get_driver, convert_to_snake_case
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -15,11 +15,8 @@ class Match:
 
 
         self.DRIVER.get(self.URL)
-        self.OPTIONS = options
-        self.STATS = {'full_time' : {},
-                      'first_half' : {},
-                      'second_half' : {}}
-        
+        self.OPTIONS = convert_to_snake_case(options)
+        self.STATS = {}
         self.__set_team_names()
         self.__set_match_details()
         self.__write_stats()
@@ -31,22 +28,21 @@ class Match:
     
     def __write_stats(self):
         goals = self.get_goals_in_halves()
-        for half_stats, half_name in zip(self.get_match_stats(), self.STATS.keys()):
+        for half_stats, half_name in zip(self.get_match_stats(), ('FT', 'HT')):
             for stats in half_stats:
-                if stats[1] in self.OPTIONS:
-                    if "%" in stats[0] or "%" in stats[2]:
-                        stats0, stats1 = stats[0].split("%")[0], stats[2].split("%")[0]
-                        try: stats[0] = max(float(stats0), 0.0)/100
-                        except: stats[0] = 0.0
-                        try: stats[2] = max(float(stats1), 0.0)/100
-                        except: stats[2] = 0.0
-                    else:
-                        stats[0], stats[2] = float(stats[0]), float(stats[2])
-                    self.STATS[half_name][stats[1]] = (stats[0], stats[2])
+                for value, side in zip(stats[0:3:2], ('home', 'away')):
+                    if stats[1] in self.OPTIONS:    #stats[1] consists of the statistic's name
+                        if "%" in value:
+                            try: value = max(float(value.replace('%', '')), 0.0)/100
+                            except: value = 0.0
+                        else:
+                            value = float(value)
+                        self.STATS[f'{stats[1]}_{side}_{half_name}'] = value
         
-        self.STATS['first_half']['Goals'] = goals[0]
-        self.STATS['second_half']['Goals'] = tuple([goals[1][0]-goals[0][0], goals[1][1]-goals[0][1]])
-        self.STATS['full_time']['Goals'] = goals[1]
+        self.STATS['goals_home_HT'] = goals[0][0]
+        self.STATS['goals_away_HT'] = goals[0][1]
+        self.STATS['goals_home_FT'] = goals[1][0]
+        self.STATS['goals_away_FT'] = goals[1][1]
 
     def __set_team_names(self):
 
@@ -78,44 +74,40 @@ class Match:
                 print("Error in get_goals_in_halves")
                 time.sleep(1)
     
+
     def get_match_stats(self):
 
         try:
             self.DRIVER.get(self.URL + ',tab:statistics')
-            buttons = WebDriverWait(self.DRIVER, 10).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='Chip kkEtZp']"))
-                    )
-            
-            for i in range(3):
-                stats_with_percents = WebDriverWait(self.DRIVER, 10).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='Text gxbNET']"))
+            buttons = []
+            for i in range(1, 4):
+                selector = f"/html/body/div[1]/main/div[2]/div/div/div[1]/div[4]/div[2]/div[1]/div/div/div/div[2]/div/div/div/div[1]/div/div/div/div/button[{i}]"
+                btn = WebDriverWait(self.DRIVER, 10).until(
+                    EC.presence_of_element_located((By.XPATH, selector))
                 )
+                buttons.append(btn)
 
+            for i in range(len(buttons)):
                 stat_home = WebDriverWait(self.DRIVER, 10).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='Text iZtpCa']"))
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='textStyle_body.medium c_neutrals.nLv1 ta_start flex_[1_1_0px]']"))
                 )
 
                 stat_names = WebDriverWait(self.DRIVER, 10).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='Text lluFbU']"))
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='textStyle_assistive.default c_neutrals.nLv1 ta_center lc_2 px_xs']"))
                 )
 
                 stat_away = WebDriverWait(self.DRIVER, 10).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='Text lfzhVF']"))
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='textStyle_body.medium c_neutrals.nLv1 ta_end flex_[1_1_0px]']"))
                 )
-
-                for x in range(len(stat_names)):
-                    if stat_names[x].get_attribute('textContent') in ['Ball possession', 'Duels']:
-                        stat_home.insert(x, stats_with_percents.pop(0))
-                        stat_away.insert(x, stats_with_percents.pop(0))
                 
-
-                results = [[x.get_attribute('textContent'), y.get_attribute('textContent'), z.get_attribute('textContent')] for x, y, z in zip(stat_home, stat_names, stat_away)]
+                results = [[x.get_attribute('textContent'), 
+                            y.get_attribute('textContent').lower().replace(' ', '_').replace('(', '').replace(')', ''),
+                            z.get_attribute('textContent')] 
+                            for x, y, z in zip(stat_home, stat_names, stat_away)]
                 
                 yield results
                 
-                if i < 2: self.DRIVER.execute_script("arguments[0].click();", buttons.pop(0))
-               
-
+                if i < 2: self.DRIVER.execute_script("arguments[0].click();", buttons.pop(1))
         
         finally:
             pass
