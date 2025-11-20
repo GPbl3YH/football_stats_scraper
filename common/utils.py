@@ -1,7 +1,4 @@
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
@@ -31,7 +28,7 @@ def create_all_tables(connection, options):
                         name TEXT PRIMARY KEY, 
                         league TEXT NOT NULL)
                    """)
-    #TODO: delete rows which are not in options anymore
+    
     cursor.execute("""CREATE TABLE IF NOT EXISTS matches(
                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
                    date TEXT NOT NULL,
@@ -56,12 +53,6 @@ def create_all_tables(connection, options):
         
     connection.commit()           
                
-def get_driver():
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new") 
-    options.add_argument("--window-size=1920,1080") 
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
 
 def save_stats_to_database(match, connection):
 
@@ -86,46 +77,51 @@ def save_stats_to_database(match, connection):
     connection.commit()
 
 
-def get_season_matches(url):
-    driver = get_driver()
+def get_season_matches(url, label=""):
+    from .models import Driver
+    import random
+
+    driver = Driver()
     driver.get(url)
-    
     drop_down_menus, rounds, next_round = [], [], []
 
     for attempt in range(3):
         try:
-            drop_down_menus = WebDriverWait(driver, 10).until(
+            drop_down_menus = WebDriverWait(driver, 20).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='dropdown__button dropdown__button--isOnColor_false dropdown__button--hideLabel_true']"))
             )
             driver.execute_script("arguments[0].click();", drop_down_menus[1])
 
-            rounds = WebDriverWait(driver, 10).until(
+            rounds = WebDriverWait(driver, 20).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='dropdown__listItem dropdown__listItem--isOnColor_false dropdown__listItem--hideLabel_true']"))
             )
 
-            next_round = WebDriverWait(driver, 10).until(
+            next_round = WebDriverWait(driver, 20).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='p_xs bd_1.5px_solid_transparent bg_surface.s2 bdr_sm h_2xl w_2xl d_flex ai_center jc_center disabled:cursor_not-allowed enabled:cursor_pointer enabled:hover:bg_primary.highlight enabled:active:bg_primary.highlight enabled:focusVisible:bg_primary.highlight enabled:focusVisible:bd-c_neutrals.nLv4']"))
             )
 
         except Exception as e:
-            print(f'Attempt {attempt} failed. Error in get_season_matches. If you see this, check the internet connection') 
+            print(f'Attempt {attempt} failed. Error in get_season_matches. If you see this, check the internet connection', e)
+        
+        # finally:
+        #     time.sleep(random.uniform(0.3, 2.4))
+
 
     links = []
 
-    print(f'Total rounds: {len(rounds)}')
-    for x in range(len(rounds), 0, -1):
-        print(x)
+    print(f'Total rounds in {label}: {len(rounds)}')
+    for round_number in range(len(rounds), 0, -1):
+        print(round_number)
         is_round = driver.find_element(By.CSS_SELECTOR, 'div.dropdown__root:nth-child(2) > button:nth-child(2) > span:nth-child(1)')
         if 'Round' in is_round.get_attribute("textContent"):
             round_matches = WebDriverWait(driver, 30).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class^='event-hl']"))
             )
             links += [x.get_attribute("href") for x in round_matches]
-            
-        if x > 1: driver.execute_script("arguments[0].click();", next_round)
+
+        #time.sleep(random.uniform(0.3, 2.4))
+        if round_number > 1: driver.execute_script("arguments[0].click();", next_round)
 
     driver.quit()
-    return links, len(links)
-
-
+    return links
 

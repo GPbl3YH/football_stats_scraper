@@ -1,16 +1,19 @@
-from .utils import get_driver, convert_to_snake_case
+from .utils import convert_to_snake_case
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
+import undetected_chromedriver as uc
 import time
+import random
 
 
 class Match:
     
     def __init__(self, url, options, driver=None):
         self.URL = url
-        if driver is None: self.DRIVER = get_driver()
+        if driver is None: self.DRIVER = Driver()
         else: self.DRIVER = driver
 
 
@@ -59,6 +62,9 @@ class Match:
                 print("Error in __set_team_names")
                 time.sleep(1)
 
+            # finally:
+            #     time.sleep(random.uniform(0.3, 2.4))
+
 
     def get_goals_in_halves(self):
 
@@ -73,6 +79,9 @@ class Match:
             except:
                 print("Error in get_goals_in_halves")
                 time.sleep(1)
+            
+            # finally:
+            #     time.sleep(random.uniform(0.3, 2.4))
     
 
     def get_match_stats(self):
@@ -111,6 +120,7 @@ class Match:
         
         finally:
             pass
+            # time.sleep(random.uniform(0.3, 2.4))
 
 
     def __set_match_details(self):
@@ -129,6 +139,62 @@ class Match:
             except Exception:
                 print("Error in __set_match_date")
                 time.sleep(1)
+            
+            # finally:
+            #     time.sleep(random.uniform(0.3, 2.4))
 
 
             
+class Driver(uc.Chrome):
+    def __init__(self, proxy=None):
+        options = uc.ChromeOptions() 
+        
+        options.add_argument("--headless=new")
+
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--disable-infobars")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+
+        options.add_argument("--window-size=1920,1080")
+        options.add_argument("--start-maximized")
+
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 " \
+            "Safari/537.36"
+        )
+
+        super().__init__(options=options)
+        self.start_time = time.time()
+        
+
+    def get_session_duration(self, current_time):
+        return current_time - self.start_time
+    
+
+    def cooldown(self):
+        import random
+        height = self.execute_script('return document.body.scrollHeight')
+        posision = 0
+        while posision < height:
+            step = random.randint(50, 120)   
+            jitter = random.randint(-7, 7)   
+
+            posision += step + jitter
+            self.execute_script(f"window.scrollTo(0, {posision});")
+
+            time.sleep(random.uniform(0.02, 0.07))
+
+            if random.random() < 0.2:
+                time.sleep(random.uniform(0.5, 2.6))
+        time.sleep(30)
+
+    def quit(self):
+        try:
+            super().quit()
+        except:
+            pass
+
+
+
