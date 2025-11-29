@@ -87,18 +87,20 @@ def get_season_matches(url, label=""):
 
     for attempt in range(3):
         try:
-            drop_down_menus = WebDriverWait(driver, 20).until(
+            drop_down_menus = WebDriverWait(driver, 30).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='dropdown__button dropdown__button--isOnColor_false dropdown__button--hideLabel_true']"))
             )
             driver.execute_script("arguments[0].click();", drop_down_menus[1])
 
-            rounds = WebDriverWait(driver, 20).until(
+            rounds = WebDriverWait(driver, 30).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='dropdown__listItem dropdown__listItem--isOnColor_false dropdown__listItem--hideLabel_true']"))
             )
 
-            next_round = WebDriverWait(driver, 20).until(
+            next_round = WebDriverWait(driver, 30).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='p_xs bd_1.5px_solid_transparent bg_surface.s2 bdr_sm h_2xl w_2xl d_flex ai_center jc_center disabled:cursor_not-allowed enabled:cursor_pointer enabled:hover:bg_primary.highlight enabled:active:bg_primary.highlight enabled:focusVisible:bg_primary.highlight enabled:focusVisible:bd-c_neutrals.nLv4']"))
             )
+
+            break
 
         except Exception as e:
             print(f'Attempt {attempt} failed. Error in get_season_matches. If you see this, check the internet connection', e)

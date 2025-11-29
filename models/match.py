@@ -1,10 +1,9 @@
-from .utils import convert_to_snake_case
+from common import convert_to_snake_case
+from .driver import Driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
-import undetected_chromedriver as uc
 import time
 import random
 
@@ -72,7 +71,7 @@ class Match:
             try:
 
                 halves = self.DRIVER.find_elements(By.CSS_SELECTOR, "[class^='d_flex py_md px_lg gap_lg w_100%']")
-                results = tuple(tuple(map(int, half.find_element(By.CSS_SELECTOR, "[class^='textStyle_display.micro c_neutrals.nLv1 ta_center d_block']").get_attribute("innerHTML").replace(h, '').split(' - '))) for half, h in zip(halves, ('FT ', 'HT ')))
+                results = tuple(tuple(map(float, half.find_element(By.CSS_SELECTOR, "[class^='textStyle_display.micro c_neutrals.nLv1 ta_center d_block']").get_attribute("innerHTML").replace(h, '').split(' - '))) for half, h in zip(halves, ('FT ', 'HT ')))
 
                 return results[::-1]  #contains a tuple of results for HT and FT respectively
                 
@@ -120,7 +119,6 @@ class Match:
         
         finally:
             pass
-            # time.sleep(random.uniform(0.3, 2.4))
 
 
     def __set_match_details(self):
@@ -144,57 +142,7 @@ class Match:
             #     time.sleep(random.uniform(0.3, 2.4))
 
 
-            
-class Driver(uc.Chrome):
-    def __init__(self, proxy=None):
-        options = uc.ChromeOptions() 
         
-        options.add_argument("--headless=new")
-
-        options.add_argument("--disable-blink-features=AutomationControlled")
-        options.add_argument("--disable-infobars")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-
-        options.add_argument("--window-size=1920,1080")
-        options.add_argument("--start-maximized")
-
-        options.add_argument(
-            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 " \
-            "Safari/537.36"
-        )
-
-        super().__init__(options=options)
-        self.start_time = time.time()
-        
-
-    def get_session_duration(self, current_time):
-        return current_time - self.start_time
-    
-
-    def cooldown(self):
-        import random
-        height = self.execute_script('return document.body.scrollHeight')
-        posision = 0
-        while posision < height:
-            step = random.randint(50, 120)   
-            jitter = random.randint(-7, 7)   
-
-            posision += step + jitter
-            self.execute_script(f"window.scrollTo(0, {posision});")
-
-            time.sleep(random.uniform(0.02, 0.07))
-
-            if random.random() < 0.2:
-                time.sleep(random.uniform(0.5, 2.6))
-        time.sleep(30)
-
-    def quit(self):
-        try:
-            super().quit()
-        except:
-            pass
 
 
 
