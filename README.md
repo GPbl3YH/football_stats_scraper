@@ -15,6 +15,7 @@ Since this data wasn't available as a CSV, I wrote this scraper to build my own 
 The project is built with **Python** and uses **Selenium** (specifically `undetected-chromedriver`) to navigate the website just like a real user.
 
 ### Key Features:
+* **Dynamic Database Schema:** The database structure is not hardcoded. The script automatically generates table columns based on the parameters passed in the code. If you decide to scrape a new metric (e.g., "Corner Kicks"), the database updates itself automatically without manual SQL commands.
 * **Bypasses Blocking:** Uses `undetected_chromedriver` to handle websites that block standard bots.
 * **Resilient:** If the internet drops or a CAPTCHA appears, the script pauses and waits for the user instead of crashing. It also retries failed connections automatically.
 * **Smart Saving:**
