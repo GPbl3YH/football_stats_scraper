@@ -19,9 +19,9 @@ The project is built with **Python** and uses **Selenium** (specifically `undete
 * **Bypasses Blocking:** Uses `undetected_chromedriver` to handle websites that block standard bots.
 * **Resilient:** If the internet drops or a CAPTCHA appears, the script pauses and waits for the user instead of crashing. It also retries failed connections automatically.
 * **Smart Saving:**
-    * It checks if a match is already in the database before scraping to save time.
+    * It checks if a match is already in the database before scraping to save time (using a SELECT query by URL).
     * Match links are cached locally in JSON files so you don't have to reload the whole season list every time.
-* **Structured Data:** It converts raw text from the website (e.g., "55% Ball Possession") into proper numbers and stores them in a relational database (`database.db`).
+* **Structured Data:** It converts raw text from the website (e.g., "55% Ball Possession") into proper numbers (55% -> 0.55) and stores them in a relational database (`database.db`).
 
 ## 🛠 Libraries Used
 
@@ -33,8 +33,8 @@ The project is built with **Python** and uses **Selenium** (specifically `undete
 
 1.  **Clone the repo and install dependencies:**
     ```bash
-    git clone https://github.com/GPbl3YH/football-stats-scraper.git
-    cd football-stats-scraper
+    git clone https://github.com/GPbl3YH/football_stats_scraper.git
+    cd football_stats_scraper
     pip install -r requirements.txt
     ```
     *(Note: You need Google Chrome installed)*
@@ -49,15 +49,14 @@ The project is built with **Python** and uses **Selenium** (specifically `undete
     `https://www.sofascore.com/tournament/football/england/premier-league/17#id:61627`
 
 4.  **Check the data:**
-    The script will create a file named `database.db`. You can open it with any SQLite viewer (like *DB Browser for SQLite*) to see the `matches` table.
+    The script creates a file named `database.db`. You can open it with any SQLite viewer (e.g. *DB Browser for SQLite*) to inspect the `matches` table.
 
 ## 📊 Data Structure
 
 The database (`matches` table) stores data like this:
 
-| id | date | home_team | away_team | xg_home | xg_away | possession_home | ... |
-|----|------|-----------|-----------|---------|---------|-----------------|-----|
-| 1 | 2023-08-12 | Arsenal | Nott. Forest | 0.85 | 1.12 | 78% | ... |
+![SQLite database preview](https://github.com/user-attachments/assets/00d6e0f3-a348-4800-8bf9-c83b680a8f0b)
+
 
 ## 🚧 Future Plans
 
