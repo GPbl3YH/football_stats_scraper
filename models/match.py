@@ -69,15 +69,14 @@ class Match:
     def get_goals_in_halves(self):
         for i in range(3):
             try:
-                halves = WebDriverWait(self.DRIVER, 30).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class^='d_flex py_md px_lg gap_lg w_100%']"))
-                )
+                halves = self.DRIVER.find_elements(By.CSS_SELECTOR, "[class^='d_flex py_md px_lg gap_lg w_100%']")
                 results = tuple(tuple(map(float, half.find_element(By.CSS_SELECTOR, "[class^='textStyle_display.micro c_neutrals.nLv1 ta_center d_block']").get_attribute("innerHTML").replace(h, '').split(' - '))) for half, h in zip(halves, ('FT ', 'HT ')))
 
                 if len(results) != 0: return results[::-1]  #contains a tuple of results for HT and FT respectively
                 
                 if i < 2:
                     print("Error in get_goals_in_halves")
+                    time.sleep(15)
                     continue
                 
                 raise PostponedError()
@@ -97,22 +96,24 @@ class Match:
             self.DRIVER.get(self.URL + ',tab:statistics')
             buttons = []
             for i in range(1, 4):
-                selector = f"/html/body/div[1]/main/div[2]/div/div/div[1]/div[4]/div[2]/div[1]/div/div/div/div[2]/div/div/div/div[1]/div/div/div/div/button[{i}]"
-                btn = WebDriverWait(self.DRIVER, 10).until(
-                    EC.presence_of_element_located((By.XPATH, selector))
+                selectors = ["tab-ALL", "tab-1ST", "tab-2ND"]
+                btn = WebDriverWait(self.DRIVER, 20).until(
+                    EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, f'[data-testid={selectors[i-1]}]')
+                    )
                 )
                 buttons.append(btn)
 
             for i in range(len(buttons)):
-                stat_home = WebDriverWait(self.DRIVER, 10).until(
+                stat_home = WebDriverWait(self.DRIVER, 20).until(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='textStyle_body.medium c_neutrals.nLv1 ta_start flex_[1_1_0px]']"))
                 )
 
-                stat_names = WebDriverWait(self.DRIVER, 10).until(
+                stat_names = WebDriverWait(self.DRIVER, 20).until(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='textStyle_assistive.default c_neutrals.nLv1 ta_center lc_2 px_xs']"))
                 )
 
-                stat_away = WebDriverWait(self.DRIVER, 10).until(
+                stat_away = WebDriverWait(self.DRIVER, 20).until(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='textStyle_body.medium c_neutrals.nLv1 ta_end flex_[1_1_0px]']"))
                 )
                 
@@ -125,10 +126,12 @@ class Match:
                 
                 if i < 2: self.DRIVER.execute_script("arguments[0].click();", buttons.pop(1))
         
+        
         except TimeoutException as e:
-            raise CaptchaError() from e
+                raise CaptchaError() from e
 
         except Exception:
+            print("Error in get_match_stats")
             raise
 
         # finally:

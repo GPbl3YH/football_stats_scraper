@@ -38,7 +38,7 @@ class Driver:
         if self.proxy: options.add_argument(f'--proxy-server={self.proxy}')
 
         try:
-            self.__driver = uc.Chrome(options=options)
+            self.__driver = uc.Chrome(options=options, version_main=142)
             self.start_time = time.time()
 
         except Exception as e:
@@ -68,6 +68,8 @@ class Driver:
         if self.__driver:
             try:
                 self.__driver.quit()
-                
+            except OSError:
+                pass
             finally:
+                self.__driver.__del__ = lambda *args, **kwargs: None
                 self.__driver = None

@@ -51,12 +51,12 @@ while len(season_link.strip()) > 0:
             print(f"{i+1}) {match_url} successfully added [+]")
 
         except PostponedError as e:
-            message = f"[!] Postponed at {i+1}: {type(e)}\n{e}\n"
+            message = f"\n[!] Postponed at {i+1}: {type(e)}\n{e}\n"
             logging.exception(message)
             print(message)
 
         except CaptchaError as e:
-            message = f"[!] CAPTCHA at {i+1}: {type(e)}\n{e}\n"
+            message = f"\n[!] CAPTCHA at {i+1}: {type(e)}\n{e}\n"
             logging.exception(message)
             print(message)
 
@@ -91,7 +91,7 @@ while len(season_link.strip()) > 0:
                 continue
 
             else:
-                print("Second error on this match. Skipping to next...")
+                print("Second error on this match. Skipping to next...\n")
                 general_retry_count = 0 
                 reconnection_attempt = 0
 
@@ -103,5 +103,4 @@ while len(season_link.strip()) > 0:
     season_link = input("\n\nEnter an another link and press Enter (or just leave it empty to finish): ")
 
 driver.quit()
-
 
