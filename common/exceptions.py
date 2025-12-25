@@ -19,3 +19,11 @@ class CaptchaError(DefaultException):
     """
     def __init__(self, message="Failed to parse stats. Likely due to CAPTCHA."):
         super().__init__(message)
+
+
+class AwardedMatchError(DefaultException):
+    """
+    Raised when the match was awarded and no stats are available.
+    """
+    def __init__(self, message="No stats available. The match might have been awarded."):
+        super().__init__(message)

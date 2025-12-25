@@ -1,4 +1,4 @@
-from common import convert_to_snake_case, PostponedError, CaptchaError
+from common import convert_to_snake_case, PostponedError, CaptchaError, AwardedMatchError
 from .driver import Driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,7 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
 import time
 import random
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 class Match:
     def __init__(self, url, options, driver=None):
@@ -139,19 +139,35 @@ class Match:
 
 
     def __set_match_details(self):
-        for _ in range(3):
+        for attempt in range(3):
             try:
                 elements = self.DRIVER.find_elements(By.CSS_SELECTOR, "[class*='textStyle_display.micro c_neutrals.nLv3']") #returns date of match, start time, league name and field's name
                 elements = [x.get_attribute("textContent").strip() for x in elements]
+                
+                try: match_status = self.DRIVER.find_element(By.CSS_SELECTOR, "[class*='textStyle_body.medium c_neutrals.nLv3 pos_relative ta_center d_block lc_1']").get_attribute("textContent").strip()
+                except NoSuchElementException:
+                    if attempt < 2:
+                        time.sleep(3)
+                        continue
+                    raise PostponedError()
 
+                if match_status == "Awarded":
+                    raise AwardedMatchError()
+                
                 match_date = datetime.strptime(elements[0], "%d/%m/%Y").date().isoformat()
 
                 self.DATE = match_date
                 self.LEAGUE = elements[2]
                 break
             
-            except Exception:
-                print("Error in __set_match_date")
+            except PostponedError:
+                raise
+            
+            except AwardedMatchError:
+                raise
+            
+            except Exception as e:
+                print("Error in __set_match_details")
                 time.sleep(1)
             
             # finally:

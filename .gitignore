@@ -6,3 +6,4 @@ cache/
 venv/
 env/
 .env
+start.bat

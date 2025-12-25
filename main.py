@@ -1,6 +1,6 @@
 from models import Match, Driver
 from common import save_stats_to_database,  create_all_tables, get_season_matches, match_exists
-from common import PostponedError, CaptchaError
+from common import PostponedError, CaptchaError, AwardedMatchError, DefaultException
 from selenium.common.exceptions import InvalidArgumentException
 import logging
 import sqlite3
@@ -18,13 +18,13 @@ conn = sqlite3.connect("database.db")
 create_all_tables(conn, options)
 
 driver = Driver()
-input_message = "\nEnter a season link\n(for instance 'https://www.sofascore.com/tournament/football/england/premier-league/17#id:61627')\nand press Enter (empty input will close the programm): "
+input_message = "\nEnter a season link. (for instance 'https://www.sofascore.com/tournament/football/england/premier-league/17#id:61627')\nand press Enter (empty input will close the programm): "
 season_link = input(f"{input_message}")
 
 while len(season_link.strip()) > 0:
     season = ""
     try:
-        season = get_season_matches(season_link)
+        season = get_season_matches(season_link, driver)
 
     except InvalidArgumentException:
         print("\n[!] Invalid argument. Make sure that your url is correct and try again.\n")
@@ -51,12 +51,12 @@ while len(season_link.strip()) > 0:
             print(f"{i+1}) {match_url} successfully added [+]")
 
         except PostponedError as e:
-            message = f"\n[!] Postponed at {i+1}: {type(e)}\n{e}\n"
+            message = f"\n[!] Postponed at {i+1}) {match_url}\n{type(e)}. {e}\n"
             logging.exception(message)
             print(message)
 
         except CaptchaError as e:
-            message = f"\n[!] CAPTCHA at {i+1}: {type(e)}\n{e}\n"
+            message = f"\n[!] CAPTCHA at {i+1}) {match_url}\n{type(e)}. {e}\n"
             logging.exception(message)
             print(message)
 
@@ -68,32 +68,41 @@ while len(season_link.strip()) > 0:
             reconnection_attempt += 1
 
             if reconnection_attempt > 3:
-                raise Exception()
+                raise DefaultException("Maximum reconnection attempts reached. Exiting.")
             
             print(f"\nReconnection attempt: {reconnection_attempt}/3\n")
 
             time.sleep(10)
             driver.restart()
-
             continue
-
-        except Exception as e:
-            message = f'\nGeneral error at {i+1}: {match_url} occured\n'
+        
+        except AwardedMatchError as e:
+            message = f"\n[!] Awarded match at {i+1}) {match_url}\n{type(e)}. {e}\n"
             logging.exception(message)
             print(message)
+
+        except Exception as e:
+            if isinstance(e, DefaultException):
+                error_prefix = "Default error"
+            else:
+                error_prefix = "Unexpected error"
+
+            message = f'\n{error_prefix} at {i+1}) {match_url} occurred.\nReason: {e}\n'
             
+            logging.exception(message) 
+            print(message)
+
             driver.restart()
             reconnection_attempt = 0 
 
             if general_retry_count == 0:
-                print("First error on this match. Retrying...")
+                print(f"First {error_prefix.lower()} on this match. Retrying...")
                 general_retry_count += 1
                 continue
 
             else:
-                print("Second error on this match. Skipping to next...\n")
+                print(f"Second {error_prefix.lower()} on this match. Skipping to next...\n")
                 general_retry_count = 0 
-                reconnection_attempt = 0
 
         i += 1
 

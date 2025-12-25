@@ -2,6 +2,18 @@ import time
 import undetected_chromedriver as uc
 from selenium.webdriver.remote.webdriver import WebDriver
 
+
+def safe_del(self):
+    try:
+        self.quit()
+    except OSError:
+        pass
+    except Exception:
+        pass
+
+uc.Chrome.__del__ = safe_del    # Adding destructor to undetected_chromedriver.Chrome to properly close the driver
+
+
 class Driver:
     def __init__(self, headless=True, user_agent="", proxy=None):
         self.headless = headless
@@ -63,13 +75,3 @@ class Driver:
         
         raise AttributeError(f"Driver is not initialized or has no attribute '{name}'")
     
-
-    def quit(self):
-        if self.__driver:
-            try:
-                self.__driver.quit()
-            except OSError:
-                pass
-            finally:
-                self.__driver.__del__ = lambda *args, **kwargs: None
-                self.__driver = None

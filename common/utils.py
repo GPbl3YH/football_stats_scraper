@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
+
 def convert_to_snake_case(options):
     return ['_'.join((x.replace('(', '').replace(')', '').split())).lower() for x in options]  #convert given option names to snake_case
 
@@ -84,15 +85,20 @@ def save_stats_to_database(match, connection):
     connection.commit()
 
 
-def get_season_matches(url):
+def get_season_matches(url, driver=None):
     from models import Driver
-    from common import DefaultException
+    from common import DefaultException, CaptchaError
     from selenium.common.exceptions import TimeoutException
     import random
     import json
     import os
 
-    driver = Driver()
+    is_local = False
+
+    if driver is None:
+        driver = Driver()
+        is_local = True
+    
     driver.get(url)
 
     # Formating league's label:  "LaLiga 2022/2023" -> "LaLiga_2022_2023.json"
@@ -110,7 +116,7 @@ def get_season_matches(url):
 
     safe_filename = label.replace(" ", "_").replace("/", "_") + ".json"
     cache_dir = "cache"
-    os.makedirs(cache_dir, exist_ok=True) # Создаем папку, если нет
+    os.makedirs(cache_dir, exist_ok=True) # Create cache directory if it doesn't exist
     filepath = os.path.join(cache_dir, safe_filename)
 
     # Check if file already exists
@@ -142,15 +148,23 @@ def get_season_matches(url):
 
             break
 
-        except Exception as e:
-            print(f'Attempt {attempt+1} failed. Error in get_season_matches. If you see this, check the internet connection', e)
+        except IndexError as e:
+            print(f'Attempt {attempt+1} failed. IndexError in get_season_matches ({e}). If you see this, check the internet connection')
+
+            if attempt == 2:
+                raise CaptchaError("Failed to parse season matches due to CAPTCHA or connection issues.") from e
         
+        except Exception as e:
+            print(f'Attempt {attempt+1} failed. Exception in get_season_matches ({e})')
+
+            if attempt == 2:
+                raise DefaultException("Failed to parse season matches.") from e
+            
         finally:
             time.sleep(random.uniform(0.3, 2.4))
 
 
     links = []
-
     print(f'\nTotal rounds in {label}: {len(rounds)}')
     for round_number in range(len(rounds), 0, -1):
         print(f"Round №{round_number}")
@@ -161,11 +175,16 @@ def get_season_matches(url):
             )
             links += [x.get_attribute("href") for x in round_matches]
 
-        #time.sleep(random.uniform(0.3, 2.4))
-        if round_number > 1: driver.execute_script("arguments[0].click();", next_round)
+        
+        if round_number > 1:
+            next_round = WebDriverWait(driver, 30).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "[class*='p_xs bd_1.5px_solid_transparent bg_surface.s2 bdr_sm h_2xl w_2xl d_flex ai_center jc_center disabled:cursor_not-allowed enabled:cursor_pointer enabled:hover:bg_primary.highlight enabled:active:bg_primary.highlight enabled:focusVisible:bg_primary.highlight enabled:focusVisible:bd-c_neutrals.nLv4']"))
+            )
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_round)
+            time.sleep(3)
+            next_round.click()
 
-    driver.quit()
-
+    if is_local: driver.quit()
 
     # Saving links in cache
     if links:
