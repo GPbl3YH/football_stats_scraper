@@ -1,4 +1,4 @@
-from common import convert_to_snake_case, PostponedError, CaptchaError, AwardedMatchError, ModalNotFoundErrord
+from common import convert_to_snake_case, PostponedError, CaptchaError, AwardedMatchError
 from .driver import Driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
