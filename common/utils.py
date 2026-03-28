@@ -143,7 +143,7 @@ def get_season_matches(url, driver=None):
             )
 
             next_round = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='p_xs bd_1.5px_solid_transparent bg_surface.s2 bdr_sm h_2xl w_2xl d_flex ai_center jc_center disabled:cursor_not-allowed enabled:cursor_pointer enabled:hover:bg_primary.highlight enabled:active:bg_primary.highlight enabled:focusVisible:bg_primary.highlight enabled:focusVisible:bd-c_neutrals.nLv4']"))
+                EC.presence_of_element_located((By.CSS_SELECTOR, "button.p_xs:nth-child(1)"))
             )
 
             break
@@ -163,7 +163,6 @@ def get_season_matches(url, driver=None):
         finally:
             time.sleep(random.uniform(0.3, 2.4))
 
-
     links = []
     print(f'\nTotal rounds in {label}: {len(rounds)}')
     for round_number in range(len(rounds), 0, -1):
@@ -176,12 +175,12 @@ def get_season_matches(url, driver=None):
             links += [x.get_attribute("href") for x in round_matches]
 
         
-        if round_number > 1:
-            next_round = WebDriverWait(driver, 30).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "[class*='p_xs bd_1.5px_solid_transparent bg_surface.s2 bdr_sm h_2xl w_2xl d_flex ai_center jc_center disabled:cursor_not-allowed enabled:cursor_pointer enabled:hover:bg_primary.highlight enabled:active:bg_primary.highlight enabled:focusVisible:bg_primary.highlight enabled:focusVisible:bd-c_neutrals.nLv4']"))
-            )
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_round)
-            time.sleep(3)
+        if round_number > 1: # DON'T DELETE, MIGHT BE USEFUL IN THE FUTURE.
+            # next_round = WebDriverWait(driver, 30).until(
+            #     EC.element_to_be_clickable((By.CSS_SELECTOR, "[class*='p_xs bd_1.5px_solid_transparent bg_surface.s2 bdr_sm h_2xl w_2xl d_flex ai_center jc_center disabled:cursor_not-allowed enabled:cursor_pointer enabled:hover:bg_primary.highlight enabled:active:bg_primary.highlight enabled:focusVisible:bg_primary.highlight enabled:focusVisible:bd-c_neutrals.nLv4']"))
+            # )
+            # driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_round)
+            # time.sleep(3)
             next_round.click()
 
     if is_local: driver.quit()

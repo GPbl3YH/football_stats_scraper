@@ -7,3 +7,4 @@ venv/
 env/
 .env
 start.bat
+.vscode/settings.json

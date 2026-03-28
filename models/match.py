@@ -1,4 +1,4 @@
-from common import convert_to_snake_case, PostponedError, CaptchaError, AwardedMatchError
+from common import convert_to_snake_case, PostponedError, CaptchaError, AwardedMatchError, ModalNotFoundErrord
 from .driver import Driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,14 +6,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
 import time
 import random
+import re
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+
 
 class Match:
     def __init__(self, url, options, driver=None):
         self.URL = url
         if driver is None: self.DRIVER = Driver()
         else: self.DRIVER = driver
-
 
         self.DRIVER.get(self.URL)
         self.OPTIONS = convert_to_snake_case(options)
@@ -31,21 +32,38 @@ class Match:
 
     def __write_stats(self):
         goals = self.get_goals_in_halves()
-        for half_stats, half_name in zip(self.get_match_stats(), ('FT', 'HT')):
+        match_stats = self.get_match_stats()
+
+        for half_stats, half_name in zip(match_stats, ('FT', 'HT')):
             for stats in half_stats:
                 for value, side in zip(stats[0:3:2], ('home', 'away')):
                     if stats[1] in self.OPTIONS:    #stats[1] consists of the statistic's name
-                        if "%" in value:
+                        if '%' in value:
                             try: value = max(float(value.replace('%', '')), 0.0)/100
                             except: value = 0.0
                         else:
                             value = float(value)
                         self.STATS[f'{stats[1]}_{side}_{half_name}'] = value
-        
+
         self.STATS['goals_home_HT'] = goals[0][0]
         self.STATS['goals_away_HT'] = goals[0][1]
         self.STATS['goals_home_FT'] = goals[1][0]
         self.STATS['goals_away_FT'] = goals[1][1]
+
+        if 'xgot' in self.OPTIONS:
+            total_home_shots = int(self.STATS['total_shots_home_FT'])
+            total_away_shots = int(self.STATS['total_shots_away_FT'])
+
+            xGOT = self.get_xGOT(total_home_shots, total_away_shots)
+            xGOT_home_HT = sum(float(shot[2]) for shot in xGOT['home'] if int((re.search(r"(\d+)", shot[1]).group(1))) <= 45 and shot[2] != '-')
+            xGOT_away_HT = sum(float(shot[2]) for shot in xGOT['away'] if int(re.search(r"(\d+)", shot[1]).group(1)) <= 45 and shot[2] != '-')
+            xGOT_home_FT = sum(float(shot[2]) for shot in xGOT['home'] if shot[2] != '-')
+            xGOT_away_FT = sum(float(shot[2]) for shot in xGOT['away'] if shot[2] != '-')
+            
+            self.STATS['xgot_home_HT'] = xGOT_home_HT
+            self.STATS['xgot_away_HT'] = xGOT_away_HT
+            self.STATS['xgot_home_FT'] = xGOT_home_FT
+            self.STATS['xgot_away_FT'] = xGOT_away_FT
 
 
     def __set_team_names(self):
@@ -99,12 +117,12 @@ class Match:
                 selectors = ["tab-ALL", "tab-1ST", "tab-2ND"]
                 btn = WebDriverWait(self.DRIVER, 20).until(
                     EC.element_to_be_clickable(
-                    (By.CSS_SELECTOR, f'[data-testid={selectors[i-1]}]')
+                        (By.CSS_SELECTOR, f'[data-testid={selectors[i-1]}]')
                     )
                 )
                 buttons.append(btn)
 
-            for i in range(len(buttons)):
+            for i in range(len(buttons)):  
                 stat_home = WebDriverWait(self.DRIVER, 20).until(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='textStyle_body.medium c_neutrals.nLv1 ta_start flex_[1_1_0px]']"))
                 )
@@ -124,9 +142,9 @@ class Match:
                 
                 yield results
                 
-                if i < 2: self.DRIVER.execute_script("arguments[0].click();", buttons.pop(1))
-        
-        
+                if i < 2:
+                    self.DRIVER.execute_script("arguments[0].click();", buttons.pop(1))
+
         except TimeoutException as e:
                 raise CaptchaError() from e
 
@@ -137,6 +155,50 @@ class Match:
         # finally:
         #     time.sleep(random.uniform(0.3, 2.4))
 
+
+    def get_xGOT(self, home_shots, away_shots):     #return a dictionary with lists of tuples (player_name, shot_time, xGOT_value) for home and away teams
+        try:
+            self.DRIVER.get(self.URL + ',tab:statistics')
+            xGOT = {"home": [], "away": []}
+            
+            for team in ('home', 'away'):
+                for i in range(home_shots if team == 'home' else away_shots):
+                    btn = WebDriverWait(self.DRIVER, 20).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, "button.button--size_primary:nth-child(3)")))
+                
+                    self.DRIVER.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
+                    btn.click()
+
+                    player_name = WebDriverWait(self.DRIVER, 20).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "span.flex-g_1:nth-child(2)"))
+                    )
+                
+                    shot_time = WebDriverWait(self.DRIVER, 20).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "bdi.textStyle_display\.medium:nth-child(3)"))
+                    )
+
+                    xGOT_value = WebDriverWait(self.DRIVER, 20).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "div.bg-c_surface\.s2 > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > span:nth-child(2)"))
+                    )
+
+                    stat = (player_name.get_attribute("textContent").strip(), shot_time.get_attribute("textContent").strip(), xGOT_value.get_attribute("textContent").strip())
+                    
+                    #print(f'{i+1}) {stat}')
+                    xGOT[team].append(stat)
+  
+                switch_to_team_btn = WebDriverWait(self.DRIVER, 20).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-testid=tab-right]")))
+
+                self.DRIVER.execute_script("arguments[0].scrollIntoView({block: 'center'});", switch_to_team_btn)
+                time.sleep(0.5)
+                switch_to_team_btn.click()
+
+            return xGOT
+
+        except Exception as e:
+            print("Error in get_xGOT", e.with_traceback(None))
+            raise
+        
 
     def __set_match_details(self):
         for attempt in range(3):
@@ -166,7 +228,7 @@ class Match:
             except AwardedMatchError:
                 raise
             
-            except Exception as e:
+            except Exception:
                 print("Error in __set_match_details")
                 time.sleep(1)
             

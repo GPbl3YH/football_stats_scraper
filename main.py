@@ -12,12 +12,14 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-options = ['Expected goals (xG)', 'Ball possession', 'Shots on target', 'Big chances', 'Shots off target']  #<--- statistics to be saved
+######################################################## CONFIGURATIONS ##########################################################################
+options = ['Expected goals (xG)', 'xGOT', 'Ball possession', 'Total shots', 'Shots on target', 'Big chances', 'Shots off target']  #<--- statistics to be saved
+driver = Driver(headless=True)  #<--- you can set a custom user agent (https://www.whatismybrowser.com/detect/what-is-my-user-agent/) or leave it empty to use the default one
+##################################################################################################################################################
 
 conn = sqlite3.connect("database.db")  
 create_all_tables(conn, options)
 
-driver = Driver()
 input_message = "\nEnter a season link. (for instance 'https://www.sofascore.com/tournament/football/england/premier-league/17#id:61627')\nand press Enter (empty input will close the programm): "
 season_link = input(f"{input_message}")
 
