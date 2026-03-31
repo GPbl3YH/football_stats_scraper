@@ -146,6 +146,10 @@ def get_season_matches(url, driver=None):
                 EC.presence_of_element_located((By.CSS_SELECTOR, "button.p_xs:nth-child(1)"))
             )
 
+            previous_round = WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "button.bd_1\.5px_solid_transparent:nth-child(3)"))
+            )
+
             break
 
         except IndexError as e:
@@ -162,6 +166,14 @@ def get_season_matches(url, driver=None):
             
         finally:
             time.sleep(random.uniform(0.3, 2.4))
+
+    #sometimes it opens not the last round, so we need to click "previous round" 
+    #button until it becomes disabled. if the button is already disabled, it means 
+    #that we are in the last round and can start going through rounds and collecting matches links.
+    while previous_round.is_enabled():
+        print("It seems that the last round isn't opened. Clicking 'previous round' button...")
+        previous_round.click()
+        time.sleep(0.5)
 
     links = []
     print(f'\nTotal rounds in {label}: {len(rounds)}')
@@ -189,7 +201,7 @@ def get_season_matches(url, driver=None):
     if links:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(links, f, indent=4)
-        print(f"[{label}] Links are saved in cache: {filepath}")
+        print(f"\n[{label}] Links are saved in cache: {filepath}\n")
 
     
     return links

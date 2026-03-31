@@ -12,10 +12,10 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-######################################################## CONFIGURATIONS ##########################################################################
-options = ['Expected goals (xG)', 'xGOT', 'Ball possession', 'Total shots', 'Shots on target', 'Big chances', 'Shots off target']  #<--- statistics to be saved
+######################################################## CONFIGURATIONS ####################################################################################################################
+options = ['Expected goals (xG)', 'xGOT', 'Ball possession', 'Total shots', 'Shots on target', 'Big chances', 'Shots off target', 'Yellow cards', 'Red cards']  #<--- statistics to be saved
 driver = Driver(headless=True)  #<--- you can set a custom user agent (https://www.whatismybrowser.com/detect/what-is-my-user-agent/) or leave it empty to use the default one
-##################################################################################################################################################
+############################################################################################################################################################################################
 
 conn = sqlite3.connect("database.db")  
 create_all_tables(conn, options)
@@ -107,9 +107,6 @@ while len(season_link.strip()) > 0:
                 general_retry_count = 0 
 
         i += 1
-
-        if driver.get_session_duration() > 300:  #restart driver every 5 minutes
-            driver.restart()
 
     season_link = input("\n\nEnter an another link and press Enter (or just leave it empty to finish): ")
 
