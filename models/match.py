@@ -20,6 +20,7 @@ class Match:
         self.OPTIONS = convert_to_snake_case(options)
         self.STATS = {}
         self.__set_team_names()
+        self.__set_coeffs()
         self.__set_match_details()
         self.__write_stats()
 
@@ -65,6 +66,32 @@ class Match:
             self.STATS['xgot_home_FT'] = xGOT_home_FT
             self.STATS['xgot_away_FT'] = xGOT_away_FT
 
+
+    def __set_coeffs(self):
+        for _ in range(3):
+            try:
+                #saves all elements of this class into a list and then takes the first three elements 
+                #which contain the odds for home win, draw and away win respectively
+                containers = WebDriverWait(self.DRIVER, 20).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[class*='textStyle_display.micro c_neutrals.nLv1']")))
+                
+                odds_home = containers[0].get_attribute("textContent").strip()
+                odds_draw = containers[1].get_attribute("textContent").strip()
+                odds_away = containers[2].get_attribute("textContent").strip()
+            
+                self.ODDS_HOME = float(odds_home)
+                self.ODDS_DRAW = float(odds_draw)
+                self.ODDS_AWAY = float(odds_away)
+
+                break
+
+            except Exception:
+                print("Error in __set_coeffs")
+                time.sleep(1)
+
+            
+
+        
 
     def __set_team_names(self):
         for _ in range(3):
@@ -117,9 +144,8 @@ class Match:
                 selectors = ["tab-ALL", "tab-1ST", "tab-2ND"]
                 btn = WebDriverWait(self.DRIVER, 20).until(
                     EC.element_to_be_clickable(
-                        (By.CSS_SELECTOR, f'[data-testid={selectors[i-1]}]')
-                    )
-                )
+                        (By.CSS_SELECTOR, f'[data-testid={selectors[i-1]}]')))
+                
                 buttons.append(btn)
 
             for i in range(len(buttons)):  

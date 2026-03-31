@@ -30,14 +30,17 @@ def create_all_tables(connection, options):
                    """)
     
     cursor.execute("""CREATE TABLE IF NOT EXISTS matches(
-                   id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                   date TEXT NOT NULL,
-                   home_team_name TEXT NOT NULL, 
-                   away_team_name TEXT NOT NULL,
-                   url TEXT UNIQUE NOT NULL,
-                   FOREIGN KEY (home_team_name) REFERENCES teams(name) ON DELETE CASCADE, 
-                   FOREIGN KEY (away_team_name) REFERENCES teams(name) ON DELETE CASCADE, 
-                   UNIQUE(date, home_team_name, away_team_name))""")
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    date TEXT NOT NULL,
+                    home_team_name TEXT NOT NULL, 
+                    away_team_name TEXT NOT NULL,
+                    url TEXT UNIQUE NOT NULL,
+                    odds_home REAL,
+                    odds_draw REAL,
+                    odds_away REAL,
+                    FOREIGN KEY (home_team_name) REFERENCES teams(name) ON DELETE CASCADE, 
+                    FOREIGN KEY (away_team_name) REFERENCES teams(name) ON DELETE CASCADE, 
+                    UNIQUE(date, home_team_name, away_team_name))""")
     
     cursor.execute("PRAGMA table_info(matches)")    #get meta data of all current existed columns
 
@@ -73,6 +76,9 @@ def save_stats_to_database(match, connection):
     "home_team_name": match.HOME,
     "away_team_name": match.AWAY,
     "url": match.URL,
+    "odds_home" : match.ODDS_HOME,
+    "odds_draw" : match.ODDS_DRAW,
+    "odds_away" : match.ODDS_AWAY,
     **match.STATS
     }
 
