@@ -83,8 +83,8 @@ football_stats_scraper/
 
 1.  **Clone the repo and install dependencies:**
     ```bash
-    git clone https://github.com/GPbl3YH/football_stats_scraper.git
-    cd football_stats_scraper
+    git clone https://github.com/GPbl3YH/football-stats-scraper.git
+    cd football-stats-scraper
     pip install -r requirements.txt
     ```
     *(Note: You need Google Chrome installed)*
