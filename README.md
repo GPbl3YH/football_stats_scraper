@@ -105,7 +105,9 @@ football_stats_scraper/
 
 Currently, this is a pure **Data Engineering** project. My next steps are:
 1.  Perform EDA (Exploratory Data Analysis) on the collected data.
-2.  Train machine learning models (e.g. Gradient Boosting) to predict match outcomes.
+2.  ~~Train machine learning models (e.g. Gradient Boosting) to predict match outcomes.~~
+
+✅ ML pipeline completed — see [football-second-half-predictor](https://github.com/GPbl3YH/football-second-half-predictor/)
 
 ---
 *Disclaimer: This project is for educational purposes only.*
